@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ข้าวเหนียวมะม่วง — คำนวณต้นทุน</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&family=Charm:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --gold: #c8973a;
+    --gold-light: #f0d080;
+    --green: #2d6a2d;
+    --green-light: #e8f5e8;
+    --cream: #fdf8f0;
+    --cream-dark: #f5edd8;
+    --text: #2a1f0e;
+    --text-muted: #7a6a52;
+    --border: #e0d0b0;
+    --white: #ffffff;
+    --shadow: rgba(42,31,14,0.08);
+  }
+
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  header {
+    background: var(--green);
+    padding: 2rem 1.5rem 1.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 20px,
+      rgba(255,255,255,0.03) 20px,
+      rgba(255,255,255,0.03) 40px
+    );
+  }
+
+  .header-emoji {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: .5rem;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  header h1 {
+    font-family: 'Charm', serif;
+    font-size: 2rem;
+    color: var(--gold-light);
+    font-weight: 700;
+    letter-spacing: .02em;
+    position: relative;
+  }
+
+  header p {
+    color: rgba(255,255,255,0.65);
+    font-size: .9rem;
+    margin-top: .4rem;
+    position: relative;
+  }
+
+  .container {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 3rem;
+  }
+
+  .section-label {
+    font-size: .7rem;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin: 1.75rem 0 .75rem;
+  }
+
+  /* Sliders */
+  .slider-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem 1.25rem .75rem;
+    box-shadow: 0 2px 12px var(--shadow);
+  }
+
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: .9rem;
+  }
+
+  .slider-row label {
+    font-size: .82rem;
+    color: var(--text-muted);
+    min-width: 105px;
+    flex-shrink: 0;
+  }
+
+  .slider-row input[type=range] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 4px;
+    border-radius: 4px;
+    background: var(--cream-dark);
+    outline: none;
+    cursor: pointer;
+  }
+
+  .slider-row input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--gold);
+    border: 2px solid var(--white);
+    box-shadow: 0 1px 4px rgba(0,0,0,.2);
+    cursor: pointer;
+    transition: transform .15s;
+  }
+
+  .slider-row input[type=range]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+  }
+
+  .slider-val {
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--text);
+    min-width: 60px;
+    text-align: right;
+  }
+
+  /* Metric cards */
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .metric-grid.two { grid-template-columns: repeat(2, 1fr); }
+
+  .metric {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: .9rem .8rem;
+    text-align: center;
+    box-shadow: 0 2px 8px var(--shadow);
+    transition: transform .2s;
+  }
+
+  .metric:hover { transform: translateY(-2px); }
+  .metric.green { background: var(--green-light); border-color: #b0d4b0; }
+  .metric.gold { background: #fdf6e3; border-color: #e8d4a0; }
+  .metric.red { background: #fdf0f0; border-color: #e8c0c0; }
+
+  .metric-label {
+    font-size: .72rem;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+
+  .metric-val {
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .metric.green .metric-val { color: var(--green); }
+  .metric.gold .metric-val { color: #8a6010; }
+  .metric.red .metric-val { color: #9a2020; }
+
+  .metric-unit {
+    font-size: .72rem;
+    color: var(--text-muted);
+    margin-top: 3px;
+  }
+
+  /* Table */
+  .table-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px var(--shadow);
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: .83rem; }
+
+  thead tr { background: var(--cream-dark); }
+
+  th {
+    padding: .65rem .9rem;
+    text-align: left;
+    font-size: .7rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  th:not(:first-child) { text-align: right; }
+
+  td {
+    padding: .65rem .9rem;
+    border-top: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  td:not(:first-child) { text-align: right; }
+
+  tr.total td {
+    font-weight: 600;
+    background: var(--cream-dark);
+    color: #8a2020;
+  }
+
+  tr.highlight { background: #f6fcf6; }
+  tr.highlight td { font-weight: 500; }
+
+  .badge {
+    display: inline-block;
+    font-size: .65rem;
+    padding: 2px 7px;
+    border-radius: 20px;
+    font-weight: 600;
+    margin-left: 5px;
+  }
+
+  .badge.green { background: var(--green-light); color: var(--green); }
+  .badge.gold { background: #fdf6e3; color: #8a6010; }
+
+  .tag-target { color: var(--gold); font-weight: 600; }
+
+  /* Divider */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 1.5rem 0;
+  }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    font-size: .75rem;
+    color: var(--text-muted);
+    padding: 1.5rem;
+    border-top: 1px solid var(--border);
+    margin-top: 1rem;
+  }
+
+  /* Responsive */
+  @media (max-width: 420px) {
+    .metric-grid { grid-template-columns: repeat(2, 1fr); }
+    .slider-row label { min-width: 88px; font-size: .78rem; }
+    header h1 { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="header-emoji">🥭</span>
+  <h1>ข้าวเหนียวมะม่วง</h1>
+  <p>คำนวณต้นทุน กำไร และเป้าการขาย</p>
+</header>
+
+<div class="container">
+
+  <!-- Sliders -->
+  <div class="section-label">ปรับราคาวัตถุดิบ</div>
+  <div class="slider-card">
+    <div class="slider-row">
+      <label>กะทิ (ARO) 1 ล.</label>
+      <input type="range" min="40" max="90" step="1" value="55" id="sKati">
+      <span class="slider-val" id="vKati">55 ฿</span>
+    </div>
+    <div class="slider-row">
+      <label>ข้าวเหนียว 1 กก.</label>
+      <input type="range" min="30" max="90" step="1" value="55" id="sRice">
+      <span class="slider-val" id="vRice">55 ฿</span>
+    </div>
+    <div class="slider-row">
+      <label>น้ำตาลทราย 1 กก.</label>
+      <input type="range" min="20" max="40" step="1" value="28" id="sSugar">
+      <span class="slider-val" id="vSugar">28 ฿</span>
+    </div>
+    <div class="slider-row">
+      <label>มะม่วง 1 กก.</label>
+      <input type="range" min="30" max="150" step="5" value="60" id="sMango">
+      <span class="slider-val" id="vMango">60 ฿</span>
+    </div>
+    <div class="slider-row">
+      <label>ราคาขาย/ชุด</label>
+      <input type="range" min="35" max="89" step="1" value="49" id="sPrice">
+      <span class="slider-val" id="vPrice">49 ฿</span>
+    </div>
+    <div class="slider-row">
+      <label>เป้ากำไร/เดือน</label>
+      <input type="range" min="3000" max="30000" step="500" value="9000" id="sTarget">
+      <span class="slider-val" id="vTarget">9,000 ฿</span>
+    </div>
+  </div>
+
+  <!-- Cost breakdown -->
+  <div class="section-label">ต้นทุนวัตถุดิบต่อชุด</div>
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr><th>รายการ</th><th>ปริมาณ</th><th>ต้นทุน</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>ข้าวเหนียวเขี้ยวงู</td><td>100 ก.</td><td id="tRice">4 ฿</td></tr>
+        <tr><td>กะทิ — ส่วนข้าวมูน</td><td>~93 มล.</td><td id="tKati1">5 ฿</td></tr>
+        <tr><td>กะทิ — น้ำราดหน้า</td><td>~62 มล.</td><td id="tKati2">3 ฿</td></tr>
+        <tr><td>น้ำตาลทราย</td><td>~20 ก.</td><td id="tSugar">1 ฿</td></tr>
+        <tr><td>มะม่วงน้ำดอกไม้ ½ ลูก</td><td>~150 ก.</td><td id="tMango">9 ฿</td></tr>
+        <tr><td>เกลือ + แป้ง + ใบเตย</td><td>เล็กน้อย</td><td>1 ฿</td></tr>
+        <tr><td>กล่อง / ถุง</td><td>1 ชุด</td><td>3 ฿</td></tr>
+        <tr class="total"><td colspan="2">รวมต้นทุน/ชุด</td><td id="tTotal">26 ฿</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Summary -->
+  <div class="section-label">สรุปตัวเลขหลัก</div>
+  <div class="metric-grid">
+    <div class="metric red">
+      <div class="metric-label">ต้นทุน/ชุด</div>
+      <div class="metric-val" id="mCost">26</div>
+      <div class="metric-unit">บาท</div>
+    </div>
+    <div class="metric green">
+      <div class="metric-label">กำไร/ชุด</div>
+      <div class="metric-val" id="mProfit">23</div>
+      <div class="metric-unit">บาท</div>
+    </div>
+    <div class="metric green">
+      <div class="metric-label">margin</div>
+      <div class="metric-val" id="mMargin">47</div>
+      <div class="metric-unit">%</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Daily/weekly/monthly target -->
+  <div class="section-label">เพื่อถึงเป้า <span id="targetLabelA" class="tag-target">9,000</span> ฿/เดือน</div>
+  <div class="metric-grid">
+    <div class="metric gold">
+      <div class="metric-label">ต้องขาย/วัน</div>
+      <div class="metric-val" id="perDay">—</div>
+      <div class="metric-unit">ชุด</div>
+    </div>
+    <div class="metric gold">
+      <div class="metric-label">ต้องขาย/สัปดาห์</div>
+      <div class="metric-val" id="perWeek">—</div>
+      <div class="metric-unit">ชุด</div>
+    </div>
+    <div class="metric gold">
+      <div class="metric-label">ต้องขาย/เดือน</div>
+      <div class="metric-val" id="perMonth">—</div>
+      <div class="metric-unit">ชุด</div>
+    </div>
+  </div>
+
+  <!-- Scenarios -->
+  <div class="section-label">ถ้าขายได้ต่างกัน — กำไรเดือนละเท่าไหร่</div>
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr><th>ขาย/วัน</th><th>กำไร/วัน</th><th>กำไร/สัปดาห์</th><th>กำไร/เดือน</th></tr>
+      </thead>
+      <tbody id="scenarioBody">
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<footer>ราคาวัตถุดิบอิงจากแมคโคร — ปรับ slider ตามราคาจริงที่ซื้อได้ค่ะ</footer>
+
+<script>
+const TARGET_MONTHLY = 9000;
+
+function fmt(n){ return n.toLocaleString('th-TH'); }
+
+function calc(){
+  const kati   = +document.getElementById('sKati').value;
+  const rice   = +document.getElementById('sRice').value;
+  const sugar  = +document.getElementById('sSugar').value;
+  const mango  = +document.getElementById('sMango').value;
+  const price  = +document.getElementById('sPrice').value;
+  const target = +document.getElementById('sTarget').value;
+
+  document.getElementById('vKati').textContent   = fmt(kati)+' ฿';
+  document.getElementById('vRice').textContent   = fmt(rice)+' ฿';
+  document.getElementById('vSugar').textContent  = fmt(sugar)+' ฿';
+  document.getElementById('vMango').textContent  = fmt(mango)+' ฿';
+  document.getElementById('vPrice').textContent  = fmt(price)+' ฿';
+  document.getElementById('vTarget').textContent = fmt(target)+' ฿';
+  document.getElementById('targetLabelA').textContent = fmt(target);
+
+  const cRice  = Math.round(rice  * 0.10);
+  const cK1    = Math.round(kati  * 0.093);
+  const cK2    = Math.round(kati  * 0.062);
+  const cSugar = Math.max(1, Math.round(sugar * 0.02));
+  const cMango = Math.round(mango * 0.15);
+  const cOther = 1;
+  const cPack  = 3;
+  const total  = cRice + cK1 + cK2 + cSugar + cMango + cOther + cPack;
+
+  document.getElementById('tRice').textContent   = cRice+' ฿';
+  document.getElementById('tKati1').textContent  = cK1+' ฿';
+  document.getElementById('tKati2').textContent  = cK2+' ฿';
+  document.getElementById('tSugar').textContent  = cSugar+' ฿';
+  document.getElementById('tMango').textContent  = cMango+' ฿';
+  document.getElementById('tTotal').textContent  = total+' ฿';
+  document.getElementById('mCost').textContent   = total;
+
+  const profit = price - total;
+  const margin = Math.round((profit / price) * 100);
+  document.getElementById('mProfit').textContent = profit;
+  document.getElementById('mMargin').textContent = margin > 0 ? margin : 0;
+
+  const perMonth = profit > 0 ? Math.ceil(target / profit) : '∞';
+  const perWeek  = profit > 0 ? Math.ceil(perMonth / 4)    : '∞';
+  const perDay   = profit > 0 ? Math.ceil(perMonth / 30)   : '∞';
+  document.getElementById('perDay').textContent   = perDay;
+  document.getElementById('perWeek').textContent  = perWeek;
+  document.getElementById('perMonth').textContent = perMonth;
+
+  // Scenarios
+  const scenarios = [10, 15, 20, 30, 50];
+  const targetPerDay = profit > 0 ? Math.ceil(target / profit / 30) : 999;
+  const tbody = document.getElementById('scenarioBody');
+  tbody.innerHTML = '';
+  scenarios.forEach(n => {
+    const gDay   = profit * n;
+    const gWeek  = gDay * 7;
+    const gMonth = gDay * 30;
+    const isTarget = n === targetPerDay || (n >= targetPerDay && scenarios.indexOf(n) === scenarios.findIndex(x => x >= targetPerDay));
+    const tr = document.createElement('tr');
+    if(isTarget) tr.className = 'highlight';
+    tr.innerHTML = `
+      <td>${n} ชุด${isTarget ? '<span class="badge green">เป้า</span>' : ''}</td>
+      <td>${fmt(gDay)} ฿</td>
+      <td>${fmt(gWeek)} ฿</td>
+      <td style="font-weight:${gMonth >= target ? '600' : '400'};color:${gMonth >= target ? 'var(--green)' : 'inherit'}">${fmt(gMonth)} ฿</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+['sKati','sRice','sSugar','sMango','sPrice','sTarget'].forEach(id => {
+  document.getElementById(id).addEventListener('input', calc);
+});
+calc();
+</script>
+</body>
+</html>
